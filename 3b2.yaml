@@ -135,7 +135,7 @@ local_conf_header:
     INITRAMFS_FSTYPES = "cpio.gz"
     # 可选：为内核添加 initramfs 支持
     KERNEL_FEATURES:append = " features/initramfs/initramfs.scc"
-     # 确保 initramfs 镜像也以 cpio.gz 格式输出
+    # 确保 initramfs 镜像也以 cpio.gz 格式输出
     IMAGE_FSTYPES:pn-core-image-minimal-initramfs = "cpio.gz"
   no-graphics: |
     # 显式移除所有图形相关特性
