@@ -4,21 +4,17 @@ on:
   push:
     branches: [ main, master ]
     paths:
-      - '3b2.yaml'
-      - 'raspi-tiny.yaml'
+      - '*.yaml'
       - 'conf/**'
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
     inputs:
       config:
-        description: 'KAS config file to build'
+        description: 'KAS config file to build (e.g., 3b2.yaml, raspi-tiny.yaml)'
         required: true
         default: '3b2.yaml'
-        type: choice
-        options:
-          - 3b2.yaml
-          - raspi-tiny.yaml
+        type: string
 
 env:
   SCCACHE_DIR: ${{ github.workspace }}/.cache/sccache
@@ -39,12 +35,12 @@ jobs:
         if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
           CONFIG="${{ github.event.inputs.config }}"
         else
-          # Auto-detect based on changed files
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || echo "")
-          if echo "$CHANGED_FILES" | grep -q "raspi-tiny.yaml"; then
-            CONFIG="raspi-tiny.yaml"
-          else
-            CONFIG="3b2.yaml"
+          # Auto-detect based on changed yaml files in root directory
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || git diff --name-only --cached || echo "")
+          # Find first changed .yaml file in root directory
+          CONFIG=$(echo "$CHANGED_FILES" | grep -E '^[^/]+\.yaml$' | head -n1)
+          if [ -z "$CONFIG" ]; then
+            CONFIG="3b2.yaml"  # default fallback
           fi
         fi
         echo "config=$CONFIG" >> $GITHUB_OUTPUT
