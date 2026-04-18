@@ -10,12 +10,38 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+env:
+  SCCACHE_DIR: ${{ github.workspace }}/.cache/sccache
+  SCCACHE_CACHE_SIZE: 5G
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Setup sccache
+      uses: mozilla-actions/sccache-action@v0.0.6
+
+    - name: Cache sccache
+      uses: actions/cache@v4
+      with:
+        path: .cache/sccache
+        key: sccache-${{ runner.os }}-${{ github.sha }}
+        restore-keys: |
+          sccache-${{ runner.os }}-
+
+    - name: Cache Yocto sstate
+      uses: actions/cache@v4
+      with:
+        path: |
+          build/sstate-cache
+          build/downloads
+        key: yocto-${{ runner.os }}-${{ hashFiles('3b2.yaml') }}-${{ github.sha }}
+        restore-keys: |
+          yocto-${{ runner.os }}-${{ hashFiles('3b2.yaml') }}-
+          yocto-${{ runner.os }}-
 
     - name: Install dependencies
       run: |
@@ -25,6 +51,11 @@ jobs:
     - name: Build with kas-container
       run: |
         kas-container build 3b2.yaml
+      env:
+        SCCACHE_DIR: /workspace/.cache/sccache
+        SCCACHE_CACHE_SIZE: 5G
+        CXX: sccache clang++
+        CC: sccache clang
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -32,3 +63,6 @@ jobs:
         name: build-artifacts
         path: build/tmp/deploy/images/
         retention-days: 7
+
+    - name: Show sccache stats
+      run: sccache --show-stats || true
