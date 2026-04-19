@@ -13,9 +13,9 @@ on:
   workflow_dispatch:
     inputs:
       config:
-        description: 'KAS config file to build (e.g., 3b2.yaml, raspi-tiny.yaml)'
-        required: true
-        default: '3b2.yaml'
+        description: 'KAS config file to build (e.g., 3b2.yaml, raspi-tiny.yaml). Leave empty to build all configs.'
+        required: false
+        default: ''
         type: string
 
 env:
@@ -23,34 +23,44 @@ env:
   SCCACHE_CACHE_SIZE: 5G
 
 jobs:
-  detect-config:
+  detect-configs:
     runs-on: ubuntu-latest
     outputs:
-      config: ${{ steps.set-config.outputs.config }}
+      configs: ${{ steps.set-configs.outputs.configs }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Determine which config to build
-      id: set-config
+    - name: Determine which configs to build
+      id: set-configs
       run: |
-        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          CONFIG="${{ github.event.inputs.config }}"
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.config }}" ]; then
+          # Manual dispatch with specific config
+          CONFIGS='["${{ github.event.inputs.config }}"]'
+        elif [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          # Tag push: build all yaml configs in root directory
+          CONFIGS=$(find . -maxdepth 1 -name "*.yaml" -type f | sed 's|^\./||' | sort | jq -R -s -c 'split("\n") | map(select(length > 0))')
         else
-          # Auto-detect based on changed yaml files in root directory
+          # Branch push or PR: auto-detect changed yaml files
           CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || git diff --name-only --cached || echo "")
-          # Find first changed .yaml file in root directory
-          CONFIG=$(echo "$CHANGED_FILES" | grep -E '^[^/]+\.yaml$' | head -n1)
-          if [ -z "$CONFIG" ]; then
-            CONFIG="3b2.yaml"  # default fallback
+          CHANGED_YAMLS=$(echo "$CHANGED_FILES" | grep -E '^[^/]+\.yaml$' || true)
+          if [ -n "$CHANGED_YAMLS" ]; then
+            CONFIGS=$(echo "$CHANGED_YAMLS" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          else
+            # Fallback to all yaml files if no specific change detected
+            CONFIGS=$(find . -maxdepth 1 -name "*.yaml" -type f | sed 's|^\./||' | sort | jq -R -s -c 'split("\n") | map(select(length > 0))')
           fi
         fi
-        echo "config=$CONFIG" >> $GITHUB_OUTPUT
-        echo "Building: $CONFIG"
+        echo "configs=$CONFIGS" >> $GITHUB_OUTPUT
+        echo "Building configs: $CONFIGS"
 
   build:
-    needs: detect-config
+    needs: detect-configs
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config: ${{ fromJson(needs.detect-configs.outputs.configs) }}
+      fail-fast: false
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -64,9 +74,9 @@ jobs:
         path: |
           build/sstate-cache
           build/downloads
-        key: yocto-${{ runner.os }}-${{ hashFiles(needs.detect-config.outputs.config) }}-${{ github.sha }}
+        key: yocto-${{ runner.os }}-${{ hashFiles(matrix.config) }}-${{ github.sha }}
         restore-keys: |
-          yocto-${{ runner.os }}-${{ hashFiles(needs.detect-config.outputs.config) }}-
+          yocto-${{ runner.os }}-${{ hashFiles(matrix.config) }}-
           yocto-${{ runner.os }}-
 
     - name: Enable user namespaces
@@ -81,7 +91,7 @@ jobs:
 
     - name: Build with kas
       run: |
-        kas build ${{ needs.detect-config.outputs.config }}
+        kas build ${{ matrix.config }}
       env:
         SCCACHE_DIR: ${{ github.workspace }}/.cache/sccache
         SCCACHE_CACHE_SIZE: 5G
@@ -89,7 +99,7 @@ jobs:
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: build-artifacts-${{ needs.detect-config.outputs.config }}
+        name: build-artifacts-${{ matrix.config }}
         path: build/tmp/deploy/images/
         retention-days: 7
 
@@ -97,33 +107,42 @@ jobs:
       run: sccache --show-stats || true
 
   release:
-    needs: build
+    needs: [build, detect-configs]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
+    strategy:
+      matrix:
+        config: ${{ fromJson(needs.detect-configs.outputs.configs) }}
+      fail-fast: false
     steps:
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
-        pattern: build-artifacts-*
+        name: build-artifacts-${{ matrix.config }}
         path: artifacts
-        merge-multiple: true
 
     - name: Prepare release assets
+      id: prepare
       run: |
         mkdir -p release-assets
         # Find and copy image files (.wic, .wic.xz, .ext4, .tar.xz, etc.)
-        find artifacts -type f \( -name "*.wic" -o -name "*.wic.xz" -o -name "*.ext4" -o -name "*.ext4.xz" -o -name "*.tar.xz" -o -name "*.tar.gz" -o -name "*.zip" \) -exec cp {} release-assets/ \;
-        # Copy wic.bmap if exists
+        find artifacts -type f \( -name "*.wic" -o -name "*.wic.xz" -o -name "*.ext4" -o -name "*.ext4.xz" -o -name "*.tar.xz" -o -name "*.tar.gz" -o -name "*.zip" -o -name "*.rpi-sdimg" -o -name "*.rpi-sdimg.xz" \) -exec cp {} release-assets/ \;
+        # Copy bmap files if exist
         find artifacts -type f -name "*.bmap" -exec cp {} release-assets/ \;
         # Show what we found
         ls -la release-assets/
+        # Generate release name (remove .yaml suffix for cleaner tag)
+        CONFIG_NAME="${{ matrix.config }}"
+        CONFIG_NAME="${CONFIG_NAME%.yaml}"
+        echo "config_name=$CONFIG_NAME" >> $GITHUB_OUTPUT
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
-        name: Release ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}-${{ steps.prepare.outputs.config_name }}
+        tag: ${{ github.ref_name }}-${{ steps.prepare.outputs.config_name }}
         generate_release_notes: true
         files: release-assets/*
         fail_on_unmatched_files: false
