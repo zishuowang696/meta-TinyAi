@@ -1,0 +1,13 @@
+diff --git a/arch/arm/boot/dts/broadcom/bcm2837-rpi-3-b.dts b/arch/arm/boot/dts/broadcom/bcm2837-rpi-3-b.dts
+index 6de88af..e8b7c12 100644
+--- a/arch/arm/boot/dts/broadcom/bcm2837-rpi-3-b.dts
++++ b/arch/arm/boot/dts/broadcom/bcm2837-rpi-3-b.dts
+@@ -28,3 +28,10 @@
+ &hdmi {
+ 	hpd-gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+ };
++
++/* Disable Bluetooth - meta-embedlab */
++&bt {
++	status = "disabled";
++};
