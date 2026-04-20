@@ -128,9 +128,6 @@ local_conf_header:
     PREFERRED_PROVIDER_linux-yocto-tiny = ""
     PREFERRED_VERSION_linux-yocto-tiny = ""
 
-    # 禁用蓝牙（通过 config.txt dtoverlay）
-    DISABLE_BLUETOOTH = "1"
-
   # 磁盘监控（防止空间爆满）
   diskmon: |
     BB_DISKMON_DIRS = "\
