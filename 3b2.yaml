@@ -108,7 +108,7 @@ local_conf_header:
   
   # 最小化配置 + QEMU USB网络支持
   minimal-config: |
-    IMAGE_FSTYPES = "rpi-sdimg"
+    IMAGE_FSTYPES = "rpi-sdimg tar.gz ext4"
     ENABLE_UART = "1"
     KERNEL_MODULE_AUTOLOAD:append = " dwc2 usbnet smsc95xx"
   
