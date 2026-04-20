@@ -105,6 +105,7 @@ local_conf_header:
   # 调试配置（无密码root登录，方便QEMU串口）
   debug-access: |
     IMAGE_FEATURES += "empty-root-password allow-empty-password allow-root-login post-install-logging"
+    IMAGE_FEATURES += "debug-tweaks"
   
   # 最小化配置 + QEMU USB网络支持
   minimal-config: |

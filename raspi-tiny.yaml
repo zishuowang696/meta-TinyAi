@@ -110,6 +110,7 @@ local_conf_header:
   # 调试配置（无密码root登录）
   debug-access: |
     IMAGE_FEATURES += "empty-root-password allow-empty-password allow-root-login post-install-logging"
+    IMAGE_FEATURES += "debug-tweaks"
 
   # 树莓派配置 - 保持内核编译
   rpi-config: |
