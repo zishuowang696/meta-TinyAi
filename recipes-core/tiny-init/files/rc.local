@@ -1,0 +1,20 @@
+#!/bin/sh
+# 多串口 getty 启动脚本 (poky-tiny)
+# 自动检测设备是否存在，不存在则跳过
+
+# 启动 getty 的函数
+start_getty() {
+    tty="$1"
+    baud="$2"
+    if [ -c "/dev/$tty" ]; then
+        echo "Starting getty on $tty..."
+        setsid /sbin/getty -L "$baud" "$tty" &
+    else
+        echo "Device /dev/$tty not found, skipping"
+    fi
+}
+
+# 启动多串口控制台
+start_getty ttyS0 115200
+start_getty ttyAMA0 115200
+start_getty ttyAMA1 115200
