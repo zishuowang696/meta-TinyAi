@@ -7,8 +7,10 @@ target:
   - core-image-minimal
 
 repos:
-  # 占位，保持与官方结构一致
-  meta-raspberry:
+  # 本地层 (meta-embedlab)
+  meta-embedlab:
+    layers:
+      .:
 
   # 1. BitBake构建引擎（标记为禁用，不作为layer）
   bitbake:

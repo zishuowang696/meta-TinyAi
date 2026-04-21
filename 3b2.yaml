@@ -7,6 +7,11 @@ target:
   - core-image-minimal
 
 repos:
+  # 本地层 (meta-embedlab)
+  meta-embedlab:
+    layers:
+      .:
+
   # 1. BitBake构建引擎（标记为禁用，不作为layer）
   bitbake:
     url: https://git.openembedded.org/bitbake
