@@ -1,6 +1,10 @@
 # meta-embedlab: Disable Bluetooth and configure UART aliases for Raspberry Pi 3B
 # This frees up PL011 UART (ttyAMA0) for serial console usage
 
+# 添加内核默认启动参数配置
+FILESEXTRAPATHS:prepend := "${THISDIR}:"
+SRC_URI:append = " file://cmdline.cfg"
+
 do_configure:prepend() {
     # Append bluetooth disable and uart alias snippet to the device tree files
     UART_CONFIG='
