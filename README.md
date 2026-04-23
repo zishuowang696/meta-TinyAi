@@ -7,8 +7,8 @@
 - 🧊 爱发电：南极熊（待补充）
 - 🐙 GitHub：[zishuowang](https://github.com/zishuowang696)
 
-**不求出人头地，只求别浪费手艺。**  
-**—— 一个干了18年还是大头兵的嵌入式工程师**
+  
+
 
 ---
 
