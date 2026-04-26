@@ -13,7 +13,7 @@ RDEPENDS:${PN} += "llama-cpp wget bash"
 do_install() {
     install -d ${D}${bindir}
     install -d ${D}/data/models
-    install -m 0755 ${WORKDIR}/tinyai-demo.sh ${D}${bindir}/tinyai-demo
+    install -m 0755 ${UNPACKDIR}/tinyai-demo.sh ${D}${bindir}/tinyai-demo
 }
 
 FILES:${PN} += "/data/models"
