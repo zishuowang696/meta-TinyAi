@@ -8,8 +8,6 @@ PR = "r0"
 
 SRC_URI = "file://tinyai-demo.sh"
 
-S = "${WORKDIR}"
-
 RDEPENDS:${PN} += "llama-cpp wget bash"
 
 do_install() {
