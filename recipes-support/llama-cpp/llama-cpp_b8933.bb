@@ -20,6 +20,7 @@ EXTRA_OECMAKE = "\
     -DLLAMA_CPU_AARCH64=ON \
     -DLLAMA_BUILD_TESTS=OFF \
     -DLLAMA_OPENSSL=OFF \
+    -DBUILD_SHARED_LIBS=OFF \
 "
 
 # Build only llama-cli + llama-server — skip all other examples
