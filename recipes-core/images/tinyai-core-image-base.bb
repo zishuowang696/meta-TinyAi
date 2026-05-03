@@ -2,7 +2,7 @@ SUMMARY = "TinyAI core console image with llama-cpp, SSH & ADB"
 
 LICENSE = "MIT"
 
-IMAGE_FEATURES += "splash"
+IMAGE_FEATURES += "splash package-management"
 
 inherit core-image
 
