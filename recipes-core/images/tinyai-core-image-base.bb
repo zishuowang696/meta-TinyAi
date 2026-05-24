@@ -5,6 +5,7 @@ LICENSE = "MIT"
 IMAGE_FEATURES += "splash package-management"
 
 inherit core-image
+inherit qemu-launch
 
 IMAGE_INSTALL:append = "\
     llama-cpp \
