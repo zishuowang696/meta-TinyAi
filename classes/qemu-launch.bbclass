@@ -31,9 +31,12 @@ python generate_qemu_launch_script() {
             console = parts[1]
             break
 
-    # Locate the template relative to this bbclass file
-    bbclass_dir = os.path.dirname(d.getVar('FILE'))
-    template_path = os.path.join(bbclass_dir, '..', 'files', 'qemu-boot.sh.in')
+    # Locate the template relative to the layer root.
+    # NOTE: d.getVar('FILE') is the recipe path, not the bbclass path.
+    # Recipes live at <layer>/recipes-<category>/<pn>/<recipe>.bb,
+    # so we go up 2 levels to reach the layer root.
+    recipe_dir = os.path.dirname(d.getVar('FILE'))
+    template_path = os.path.join(recipe_dir, '..', '..', 'files', 'qemu-boot.sh.in')
     template_path = os.path.normpath(template_path)
 
     if not os.path.exists(template_path):

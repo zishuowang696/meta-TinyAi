@@ -32,7 +32,7 @@ find_model() {
     # Look in MODEL_DIR first, then common locations
     for d in "$MODEL_DIR" /home/root/models /home /root; do
         if [ -d "$d" ]; then
-            found=$(find "$d" -maxdepth 2 -name '*.gguf' -type f 2>/dev/null | head -1)
+            found=$(find "$d" -maxdepth 2 -name '*.gguf' -type f 2>/dev/null | head -n 1)
             if [ -n "$found" ]; then
                 echo "$found"
                 return 0
@@ -122,7 +122,7 @@ cmd_bench() {
     header "Benchmark"
 
     # Show system info
-    echo "  CPU:  $(grep 'model name' /proc/cpuinfo | head -1 | sed 's/.*: //')"
+    echo "  CPU:  $(grep 'model name' /proc/cpuinfo | head -n 1 | sed 's/.*: //')"
     echo "  Cores: $(nproc)"
     echo "  RAM:   $(free -h | awk '/Mem:/{print $2}')"
     echo
